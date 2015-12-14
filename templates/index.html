@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>SPAC 2016 Ticket Sales</title>
+    <script src="//js.pusher.com/2.2/pusher.min.js"></script>
+    <script type="text/javascript" src="//code.jquery.com/jquery-2.1.1.min.js"></script>
+    <link rel="stylesheet" href="https://bootswatch.com/paper/bootstrap.css">
+    <style type="text/css">
+        body {padding-top: 50px;}
+    </style>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js"></script>
+    <script type="text/javascript">
+        $( function() {
+
+            var pusher = new Pusher('{{ settings.PUSHER_KEY }}');
+            var channel = pusher.subscribe('webhooks');
+            updater = function(user){
+                debugger;
+                var msg = '<tr><td>'+user.name +'</td>';
+                msg = msg + '</tr>';
+                $("tbody").prepend(msg);
+
+            };
+
+            channel.bind('Attendee', function(user) {
+                debugger; 
+                updater(user);
+            });
+            channel.bind('Event', function(event) {
+                debugger;
+                totalTickets(event);
+            });
+
+            $(window).load(function(){
+              // populate total
+                var total = 0;
+                var qSold = $('.quantity-sold');
+                for(var i=0; i<qSold.length; i++){
+                    total += parseInt($(qSold[i]).text());
+                }
+                $('#total').text(total);
+            });
+
+
+        });
+    </script>
+</head>
+<body>
+
+    <div class="container">
+        <h3 class="page-header">
+            Total ticket sales: <span id="total"></span>
+        </h3>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <div class="col-md-4 col-lg-4 table-responsive">
+                
+                <table class="table table-striped table-bordered table-hover">
+                    <thead>
+                        <tr>
+                            <th>Ticket Type</th>
+                            <th>Sales</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for ticketClass in event.ticket_classes %}
+                            <tr>
+                                <td> {{ticketClass.name}} </td>
+                                <td class='quantity-sold'> {{ticketClass.quantity_sold}} </td>
+                            </tr>
+                         {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            
+        </div>
+
+
+
+        <h3>Attendees</h3>
+        <table class="table table-striped table-bordered table-hover" style="height: 500px !important;overflow: scroll;display:block;">
+            <thead>
+            <tr>
+                <th>Name</th>
+                {% if attendees.attendees and attendees.attendees[0]['answers'] is not none %}
+                    {% for answer in attendees.attendees[0]['answers'] %}
+                        <th>{{ answer['question'] }}</th>
+                    {% endfor %}
+                {% endif %}
+            </tr>
+            </thead>
+            <tbody>
+            {% for attendee in attendees.attendees -%}
+                <tr>
+                    <td> <strong>{{ attendee.profile.name }}</strong></td>
+                    {% if attendees.attendees and attendees.attendees[0]['answers'] is not none %}
+                        {% for answer in attendee['answers'] %}
+                            <td>
+                                {{ answer['answer'] }}
+                            </td>
+                        {% endfor %}
+                    {% endif %}
+                </tr>
+            {%- endfor %}
+            </tbody>
+        
+        </table>
+    </div>
+</body>
+</html>
